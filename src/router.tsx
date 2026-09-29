@@ -4,19 +4,32 @@ import {
   type AnchorHTMLAttributes,
   type MouseEvent,
 } from "react";
+
+const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+
 export const RouteContext = createContext({ path: "/", search: "" });
+
 export function useRoute() {
   return useContext(RouteContext);
 }
+
+function toBrowserPath(to: string) {
+  if (!to.startsWith("/")) return to;
+  return `${basePath}${to === "/" ? "/" : to}`;
+}
+
 export function navigate(to: string) {
-  window.history.pushState({}, "", to);
+  window.history.pushState({}, "", toBrowserPath(to));
   window.dispatchEvent(new PopStateEvent("popstate"));
 }
+
 export function Link({
   href = "/",
   onClick,
   ...props
 }: AnchorHTMLAttributes<HTMLAnchorElement>) {
+  const browserHref = href.startsWith("/") ? toBrowserPath(href) : href;
+
   function handleClick(e: MouseEvent<HTMLAnchorElement>) {
     onClick?.(e);
     if (
@@ -34,5 +47,6 @@ export function Link({
       navigate(href);
     }
   }
-  return <a href={href} onClick={handleClick} {...props} />;
+
+  return <a href={browserHref} onClick={handleClick} {...props} />;
 }

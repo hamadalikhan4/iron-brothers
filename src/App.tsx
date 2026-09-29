@@ -12,14 +12,17 @@ import { Portfolio } from "./pages/Portfolio";
 import { Media } from "./pages/Media";
 import { Team } from "./pages/Team";
 import { Contact } from "./pages/Contact";
+
 class ErrorBoundary extends Component<
   { children: ReactNode },
   { error: boolean }
 > {
   state = { error: false };
+
   static getDerivedStateFromError() {
     return { error: true };
   }
+
   render() {
     return this.state.error ? (
       <div className="container section">
@@ -34,17 +37,31 @@ class ErrorBoundary extends Component<
     );
   }
 }
-const getLocation = () => ({
-  path: window.location.pathname.replace(/\/$/, "") || "/",
-  search: window.location.search,
-});
+
+const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+const getLocation = () => {
+  const pathname = window.location.pathname;
+  const logicalPath =
+    basePath && (pathname === basePath || pathname.startsWith(`${basePath}/`))
+      ? pathname.slice(basePath.length) || "/"
+      : pathname;
+
+  return {
+    path: logicalPath.replace(/\/$/, "") || "/",
+    search: window.location.search,
+  };
+};
+
 export default function App() {
   const [route, setRoute] = useState(getLocation);
+
   useEffect(() => {
     const handle = () => setRoute(getLocation());
     window.addEventListener("popstate", handle);
     return () => window.removeEventListener("popstate", handle);
   }, []);
+
   useEffect(() => {
     const name =
       navigation.find(([, u]) => u === route.path)?.[0] ||
@@ -53,10 +70,12 @@ export default function App() {
         : route.path === "/leasing"
           ? "Mine Leasing"
           : "Page Not Found");
+
     document.title =
       route.path === "/"
         ? "Iron Brothers | Mining · Minerals · Trade"
         : `${name} | Iron Brothers`;
+
     const frame = requestAnimationFrame(() => {
       if (window.location.hash) {
         document
@@ -69,8 +88,10 @@ export default function App() {
           ?.focus({ preventScroll: true });
       }
     });
+
     return () => cancelAnimationFrame(frame);
   }, [route.path]);
+
   const pages: Record<string, ReactNode> = {
     "/": <Home />,
     "/about": <About />,
@@ -86,6 +107,7 @@ export default function App() {
       />
     ),
   };
+
   const page =
     route.path === "/mine-sites" || route.path.startsWith("/mine-sites/") ? (
       <MineSites key={route.path} />
@@ -103,6 +125,7 @@ export default function App() {
         </>
       )
     );
+
   return (
     <ErrorBoundary>
       <RouteContext.Provider value={route}>
